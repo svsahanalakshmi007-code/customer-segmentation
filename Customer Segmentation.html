@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Customer Segmentation</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#16202e;--muted:#5d6b7e;--line:#dfe5ee;--accent:#3b6fd4;--accent-t:#fff;--soft:#eaf0fb;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141c;--card:#18202b;--text:#e8edf5;--muted:#93a1b5;--line:#2a3544;--accent:#6c9bf2;--accent-t:#0b1220;--soft:#1f2c42}}
+:root[data-theme="dark"]{--bg:#0f141c;--card:#18202b;--text:#e8edf5;--muted:#93a1b5;--line:#2a3544;--accent:#6c9bf2;--accent-t:#0b1220;--soft:#1f2c42}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:1.7rem;margin:.2em 0}h2{font-size:1.1rem;margin:0 0 .6em}
+.sub{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:760px){.grid{grid-template-columns:minmax(0,1fr)}}
+.kbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.kbar span{color:var(--muted);margin-right:4px}
+.kbtn{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:999px;padding:6px 14px;cursor:pointer;font:inherit}
+.kbtn[aria-pressed=true]{background:var(--accent);color:var(--accent-t);border-color:var(--accent)}
+label{display:block;font-size:.85rem;color:var(--muted);margin:12px 0 4px}
+input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--text);font:inherit}
+input:focus{outline:2px solid var(--accent);outline-offset:1px}
+input[type=range]{padding:0;border:0;background:none;accent-color:var(--accent);margin-top:6px;height:22px}
+label small{opacity:.85}
+.warn{border-left:4px solid #e8832a;background:var(--soft);padding:8px 12px;border-radius:0 10px 10px 0;font-size:.85rem;margin-bottom:14px}
+.go{margin-top:18px;width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-t);font:inherit;font-weight:600;cursor:pointer}
+.empty{color:var(--muted);text-align:center;padding:48px 8px}
+.pred small{color:var(--muted);display:block}.pred .big{font-size:2.2rem;font-weight:700;color:var(--accent);margin:2px 0 14px}
+.size{background:var(--soft);border-radius:10px;padding:12px 14px}.size b{font-size:1.5rem}
+.bars{margin-top:22px}.row{display:grid;grid-template-columns:78px 1fr 52px 44px;gap:8px;align-items:center;font-size:.88rem;margin:6px 0}
+.track{background:var(--soft);border-radius:6px;height:12px;overflow:hidden}.fill{height:100%;background:var(--line)}
+.row.me .fill{background:var(--accent)}.row.me{font-weight:700}
+.note{margin-top:24px;color:var(--muted);font-size:.8rem;text-align:center}
+</style></head><body><div class="wrap">
+<h1>🧩 Customer Segmentation</h1>
+<p class="sub">Enter the customer’s details to predict their segment.</p>
+<div class="kbar"><span>Number of clusters:</span><div id="kbtns" style="display:contents"></div></div>
+<div class="grid">
+ <div class="card"><h2>Customer details</h2>
+  <form id="f" novalidate onsubmit="return false"><div id="fields"></div><button class="go">Predict Segment</button></form></div>
+ <div class="card" id="out"></div>
+</div>
+<p class="note" id="note"></p></div>
+<script>
+const D={"feat":["Age","Income","Total_Spending","NumWebPurchases","NumCatalogPurchases","NumStorePurchases","NumWebVisitsMonth","Recency"],"mean":[47.593,52899.1109,530.5823,4.1386,2.7035,5.1364,5.4924,42.6686],"scale":[10.7038,18646.9722,544.0849,2.7225,2.7987,3.0162,2.746,25.0556],"n":2236,"models":{"2":{"centers":[[-0.0684,0.9388,0.8766,0.6296,0.8931,0.7941,-0.3332,-0.3254],[0.0474,-0.6515,-0.6083,-0.4369,-0.6198,-0.5511,0.2312,0.2258]],"size":[915,1321]},"3":{"centers":[[0.4659,1.3222,1.3009,0.2636,1.2463,0.9279,-0.7333,-0.2739],[-1.0079,0.1402,0.052,1.1098,0.1082,0.3163,0.5436,-0.3367],[0.1754,-0.7143,-0.6681,-0.5794,-0.6637,-0.5893,0.1452,0.2723]],"size":[585,475,1176]},"4":{"centers":[[0.4631,1.3279,1.3136,0.2694,1.2539,0.9362,-0.735,-0.288],[-1.0145,0.1813,0.0862,1.1536,0.1519,0.3503,0.524,-0.3029],[0.8429,-0.4462,-0.5081,-0.4605,-0.4917,-0.4281,-0.3585,1.1393],[-0.3342,-0.8881,-0.7711,-0.6314,-0.7759,-0.6876,0.5252,-0.3857]],"size":[578,451,504,703]},"5":{"centers":[[0.4583,1.3286,1.3102,0.2683,1.2518,0.934,-0.7331,-0.2848],[-1.0148,0.1838,0.0916,1.2053,0.1615,0.3663,0.5245,-0.3247],[0.907,-0.4358,-0.4954,-0.4263,-0.4741,-0.4337,-0.4593,1.1767],[-0.423,-0.7899,-0.7268,-0.6701,-0.7578,-0.6463,1.1194,0.3009],[-0.2093,-0.8966,-0.7619,-0.5827,-0.7482,-0.6572,-0.0135,-0.8462]],"size":[580,431,454,369,402]},"6":{"centers":[[0.4442,1.2708,2.4222,0.171,1.4415,0.7544,-0.6973,-0.4166],[0.4362,1.3404,0.758,0.3389,1.1349,1.0079,-0.7479,-0.233],[-1.036,0.1583,0.0908,1.2,0.1486,0.356,0.5673,-0.3125],[0.907,-0.4358,-0.4954,-0.4263,-0.4741,-0.4337,-0.4593,1.1767],[-0.4204,-0.7968,-0.7334,-0.6715,-0.7605,-0.6514,1.1196,0.2977],[-0.2106,-0.8991,-0.7636,-0.5813,-0.7494,-0.662,-0.0113,-0.8468]],"size":[187,408,419,454,367,401]}},"rng":[[19,80,47],[13551,105792,49182],[28,3302,320],[0,16,4],[0,16,2],[0,17,5],[0,17,5],[0,98,43]]};
+const L={Age:["Age",1],Income:["Income",0],Total_Spending:["Total spending (sum of purchases)",0],NumWebPurchases:["Number of web purchases",1],NumCatalogPurchases:["Number of catalog purchases",1],NumStorePurchases:["Number of store purchases",1],NumWebVisitsMonth:["Number of web visits per month",1],Recency:["Recency (days since last purchase)",1]};
+const ORDER=["Age","Income","Total_Spending","NumWebPurchases","NumCatalogPurchases","NumStorePurchases","NumWebVisitsMonth","Recency"];
+const F=ORDER.map(k=>{const i=D.feat.indexOf(k),r=D.rng[i];return [k,L[k][0],r[0],r[1],Math.max(1,Math.round((r[1]-r[0])/200)),r[2]]});
+let K=4,last=false;
+const $=id=>document.getElementById(id),fx=n=>Number(n).toLocaleString("en-US");
+$("fields").innerHTML=F.map(f=>`<label for="${f[0]}">${f[1]} <small>(data range ${fx(f[2])} – ${fx(f[3])})</small></label><input id="${f[0]}" type="number" step="any" value="${f[5]}"><input id="${f[0]}_r" type="range" min="${f[2]}" max="${f[3]}" step="${f[4]}" value="${f[5]}" aria-label="${f[1]} slider">`).join("");
+function kbtns(){$("kbtns").innerHTML=Object.keys(D.models).map(k=>`<button class="kbtn" aria-pressed="${k==K}" data-k="${k}">${k}</button>`).join("");
+document.querySelectorAll(".kbtn").forEach(b=>b.onclick=()=>{K=+b.dataset.k;kbtns();run(true)})}
+function run(live){const v={},w=[];for(const f of F){const e=$(f[0]);let x=parseFloat(e.value);if(isNaN(x)){if(!live)e.focus();return}
+v[f[0]]=x;if(x<f[2]||x>f[3])w.push(`${f[1]} (${fx(x)}) is outside the training range ${fx(f[2])} – ${fx(f[3])}`)}
+const m=D.models[K],z=D.feat.map((k,i)=>(v[k]-D.mean[i])/D.scale[i]);
+const d=m.centers.map(c=>Math.sqrt(c.reduce((s,x,i)=>s+(x-z[i])**2,0)));
+const c=d.indexOf(Math.min(...d)),mx=Math.max(...m.size),inv=d.map(x=>1/Math.max(x,1e-9)),tot=inv.reduce((a,b)=>a+b,0);last=true;
+$("out").innerHTML=(w.length?`<div class="warn">⚠ ${w.join("; ")}. Values this far outside the data always fall into the most extreme cluster – enter values on the same scale as the training data (or retrain the model on your own data).</div>`:"")+`<div class="pred"><small>Predicted Segment</small><div class="big">Cluster ${c}</div></div>
+<div class="size"><small style="color:var(--muted)">Cluster size</small><br><b>${fx(m.size[c])}</b> customers (${(m.size[c]/D.n*100).toFixed(1)}% of ${fx(D.n)})</div>
+<div class="bars"><h2>All clusters (k = ${K})</h2><div class="row" style="color:var(--muted);font-size:.78rem"><span></span><span>Cluster size</span><span></span><span>Match</span></div>${m.size.map((s,i)=>`<div class="row${i==c?" me":""}"><span>Cluster ${i}</span><div class="track"><div class="fill" style="width:${s/mx*100}%"></div></div><span>${fx(s)}</span><span>${(inv[i]/tot*100).toFixed(0)}%</span></div>`).join("")}</div>`;
+if(live!==true&&matchMedia("(max-width:760px)").matches)$("out").scrollIntoView({behavior:"smooth"})}
+$("f").addEventListener("submit",()=>run(false));
+F.forEach(f=>{const n=$(f[0]),r=$(f[0]+"_r");r.addEventListener("input",()=>{n.value=r.value;run(true)});n.addEventListener("input",()=>{r.value=n.value;run(true)})});
+$("note").textContent="Demo model trained on a synthetic dataset in the Kaggle ‘Customer Personality Analysis’ format. Method: StandardScaler + K-Means; a new customer is assigned to the nearest cluster centre.";
+kbtns();run(true);
+</script></body></html>
